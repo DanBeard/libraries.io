@@ -20,6 +20,24 @@ namespace :projects do
     RepositoryDependency.where('created_at > ?', 1.day.ago).without_project_id.with_project_name.find_each(&:update_project_id)
   end
 
+  desc 'Batch Link dependencies to projects'
+  task :batch_link_dependencies, [:page] => :environment do |_task, args|
+    exit if ENV['READ_ONLY'].present?
+    Dependency.where('created_at > ?', 1.day.ago).without_project_id.with_project_name.limit(1000).offset(args.page.to_i*1000).find_each(&:update_project_id)
+    RepositoryDependency.where('created_at > ?', 1.day.ago).without_project_id.with_project_name.limit(1000).offset(args.page.to_i*1000).find_each(&:update_project_id)
+    puts Dependency.where('created_at > ?', 1.day.ago).without_project_id.with_project_name.count()
+    puts RepositoryDependency.where('created_at > ?', 1.day.ago).without_project_id.with_project_name.count()
+  end
+
+  desc 'Batch Link dependencies to projects only pypi'
+  task :batch_link_dependencies_only, [:page] => :environment do |_task, args|
+    exit if ENV['READ_ONLY'].present?
+    Dependency.where('created_at > ?', 1.minute.ago).platform("npm").without_project_id.with_project_name.limit(1000).offset(args.page.to_i*1000).find_each(&:update_project_id)
+   # RepositoryDependency.where('created_at > ?', 1.day.ago).platform("pypi").without_project_id.with_project_name.limit(1000).offset(args.page.to_i*1000).find_each(&:update_project_id)
+    puts Dependency.where('created_at > ?', 1.minute.ago).platform("npm").without_project_id.with_project_name.count()
+    #puts RepositoryDependency.where('created_at > ?', 1.day.ago).platform("pypi").without_project_id.with_project_name.count()
+  end
+
   desc 'Check status of projects'
   task check_status: :environment do
     exit if ENV['READ_ONLY'].present?
@@ -93,10 +111,18 @@ namespace :projects do
     end
   end
 
+  desc 'Download missing packages for 1 repository (e.g. Pypi, NPM, etc)'
+  task :download_missing_only, [:repository_name] => :environment  do |_task, args|
+    exit if ENV['READ_ONLY'].present?
+    [args.repository_name].each do |platform|
+      "PackageManager::#{platform}".constantize.import_new_async 
+    end
+  end
+
   desc 'Slowly sync all pypi dependencies'
   task sync_pypi_deps: :environment do
     exit if ENV['READ_ONLY'].present?
-    Project.maintained.platform('pypi').where('last_synced_at < ?', '2016-11-29 15:30:45').order(:last_synced_at).limit(10).each(&:async_sync)
+    Project.maintained.platform('pypi').where('last_synced_at < ?', '2016-11-29 15:30:45').order(:last_synced_at).limit(100).each(&:async_sync)
   end
 
   desc 'Sync potentially outdated projects'

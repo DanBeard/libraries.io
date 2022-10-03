@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require 'sidekiq/api'
+
 namespace :app do
   desc 'remove private data'
   task remove_private_data: :environment do
@@ -27,5 +29,13 @@ namespace :app do
       key.update_attribute(:is_internal, true)
       puts "Updated internal flag for #{key.access_token}"
     end
+  end
+
+  desc 'clear sidekiq queues and schedules workers'
+  task :clear_sidekiq do 
+    Sidekiq::Queue.all.each(&:clear)
+    Sidekiq::RetrySet.new.clear
+    Sidekiq::ScheduledSet.new.clear
+    Sidekiq::DeadSet.new.clear
   end
 end

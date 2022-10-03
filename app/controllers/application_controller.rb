@@ -89,7 +89,16 @@ class ApplicationController < ActionController::Base
   end
 
   def find_project
-    @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+
+    begin
+        @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+    rescue ActiveRecord::RecordNotFound
+        puts("ATTEMPING DYNAMIC UPDATE OF " + params[:name] )
+
+        key, platform = PackageManagerDownloadWorker.new.get_platform(params[:platform])
+        platform.update(params[:name])
+        @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+    end
 
     # There could be projects in the db whose package managers have since been removed
     raise ActiveRecord::RecordNotFound unless @project.platform_class_exists?

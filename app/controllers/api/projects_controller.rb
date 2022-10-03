@@ -65,7 +65,16 @@ class Api::ProjectsController < Api::ApplicationController
   def dependencies
     @subset = params.fetch(:subset, "default")
 
-    @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+    begin
+      @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+    rescue ActiveRecord::RecordNotFound
+        puts("ATTEMPING DYNAMIC UPDATE OF " + params[:name] )
+
+        key, platform = PackageManagerDownloadWorker.new.get_platform(params[:platform])
+        platform.update(params[:name])
+        @project = Project.find_best!(params[:platform], params[:name], [:repository, :versions])
+    end
+
     @version = @project.find_version!(params[:number])
     # render app/views/api/projects/dependencies.json.jb
   end

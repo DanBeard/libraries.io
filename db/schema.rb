@@ -22,7 +22,7 @@ ActiveRecord::Schema.define(version: 2022_09_08_024404) do
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.datetime "deleted_at"
-    t.integer "rate_limit", default: 60
+    t.integer "rate_limit", default: 6000
     t.boolean "is_internal", default: false, null: false
     t.index ["access_token"], name: "index_api_keys_on_access_token"
     t.index ["user_id"], name: "index_api_keys_on_user_id"

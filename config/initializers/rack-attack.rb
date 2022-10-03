@@ -16,7 +16,7 @@ limit_proc = proc do |req|
   if req.params["api_key"].present?
     req.valid_key.rate_limit
   else
-    10 # req/min for anonymous users
+    100000 # req/min for anonymous users
   end
 end
 

@@ -1,0 +1,8 @@
+---
+:concurrency: 2
+production:
+  :concurrency: 25
+:timeout: 20
+:queues:
+  - [user, 40]
+  - [critical, 100]
